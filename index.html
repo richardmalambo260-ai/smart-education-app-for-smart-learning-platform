@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Learning Platform</title>
+
+<!-- Manifest for PWA -->
+<link rel="manifest" href="manifest.json">
+
+<style>
+body{margin:0;font-family:Arial;background:#f2f2f2;}
+header{background:green;color:white;padding:10px;text-align:center;}
+.hidden{display:none;}
+.container{padding:10px;}
+.card{background:white;padding:10px;margin:5px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);cursor:pointer;}
+.navbar{position:fixed;bottom:0;width:100%;display:flex;background:white;}
+.navbar button{flex:1;padding:10px;border:none;background:none;}
+button{padding:10px;margin-top:5px;}
+textarea,input{width:100%;padding:10px;margin:5px 0;}
+</style>
+</head>
+<body>
+
+<header>📚 SMART LEARNING PLATFORM</header>
+
+<!-- LOGIN -->
+<div id="login" class="container">
+<h3>Login/Register</h3>
+<input id="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Password"><br>
+<button onclick="register()">Register</button>
+<button onclick="login()">Login</button>
+<p id="msg"></p>
+</div>
+
+<!-- HOME -->
+<div id="home" class="container hidden">
+<h3>Subjects</h3>
+<div id="subjectList"></div>
+</div>
+
+<!-- SUBJECT VIEW -->
+<div id="subjectView" class="container hidden">
+<h3 id="subjectTitle"></h3>
+<button onclick="toggleSummary()">Show Summary / Full</button>
+<p id="notes"></p>
+<button onclick="downloadNotes()">Download Notes</button>
+<h4>Quiz</h4>
+<div id="quizBox"></div>
+<h4>Past Paper</h4>
+<div id="pastPaper"></div>
+<button onclick="goHome()">Back to Subjects</button>
+</div>
+
+<!-- CHAT HELPER -->
+<div id="chat" class="container hidden">
+<h3>Helper 🤖</h3>
+<textarea id="q" placeholder="Ask question..."></textarea>
+<button onclick="askAI()">Ask</button>
+<p id="ans"></p>
+</div>
+
+<!-- PROFILE -->
+<div id="profile" class="container hidden">
+<h3>Profile</h3>
+<p>Name: <span id="userName"></span></p>
+</div>
+
+<!-- NAV -->
+<div class="navbar hidden" id="nav">
+<button onclick="show('home')">🏠</button>
+<button onclick="show('chat')">💬</button>
+<button onclick="show('profile')">👤</button>
+</div>
+
+<script>
+// ====================== FIREBASE PLACEHOLDER ======================
+let user=null;
+function register(){alert("Firebase registration placeholder");}
+function login(){alert("Firebase login placeholder"); user={email:"user@example.com"}; show('home'); document.getElementById("login").classList.add("hidden"); document.getElementById("nav").classList.remove("hidden"); renderSubjects(); document.getElementById("userName").innerText=user.email;}
+
+// ====================== SUBJECT DATA ======================
+let subjects = {
+"mathematics":{"topics":{
+"Algebra":{"notes":"Solve equations like 2x+3=7 → x=2.\nPolynomials, Quadratic equations.","summary":"Algebra = solving equations","quiz":[{"q":"Solve 2x+3=7","options":["x=1","x=2"],"answer":1}],"pastPapers":[{"q":"Solve 3x+2=11","solution":"3x=9 → x=3"}]}
+}},
+"biology":{"topics":{
+"Cells":{"notes":"Cells are basic units of life.","summary":"Study of living things","quiz":[{"q":"Basic unit of life?","options":["Cell","Atom"],"answer":0}],"pastPapers":[{"q":"State one function of a cell","solution":"Basic unit of life"}]}
+}}
+};
+
+// ====================== APP FUNCTIONS ======================
+let currentSubject="", currentTopic="", summary=false;
+
+function renderSubjects(){
+  let container=document.getElementById("subjectList"); container.innerHTML="";
+  Object.keys(subjects).forEach(sub=>{
+    let div=document.createElement("div");
+    div.className="card"; div.innerText=sub.toUpperCase();
+    div.onclick=()=>openSubject(sub);
+    container.appendChild(div);
+  });
+}
+
+function openSubject(sub){
+  currentSubject=sub; document.getElementById("home").classList.add("hidden"); document.getElementById("subjectView").classList.remove("hidden");
+  let topicKeys=Object.keys(subjects[sub].topics); currentTopic=topicKeys[0];
+  renderNotes(); renderQuiz(); renderPastPaper();
+}
+
+function renderNotes(){
+  let data = subjects[currentSubject].topics[currentTopic];
+  document.getElementById("subjectTitle").innerText=currentSubject.toUpperCase()+" - "+currentTopic;
+  document.getElementById("notes").innerText=summary?data.summary:data.notes;
+}
+
+function toggleSummary(){summary=!summary; renderNotes();}
+
+function downloadNotes(){
+  let data = subjects[currentSubject].topics[currentTopic];
+  let blob=new Blob([data.notes],{type:"text/plain"});
+  let a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=currentSubject+"-"+currentTopic+".txt"; a.click();
+}
+
+function renderQuiz(){
+  let container=document.getElementById("quizBox"); container.innerHTML="";
+  let data = subjects[currentSubject].topics[currentTopic].quiz;
+  data.forEach((q,i)=>{
+    let div=document.createElement("div"); div.innerHTML="<b>"+q.q+"</b><br>";
+    q.options.forEach((opt,idx)=>{
+      let btn=document.createElement("button"); btn.innerText=opt;
+      btn.onclick=()=>alert(idx===q.answer?"Correct":"Wrong");
+      div.appendChild(btn);
+    });
+    container.appendChild(div);
+  });
+}
+
+function renderPastPaper(){
+  let container=document.getElementById("pastPaper"); container.innerHTML="";
+  let data = subjects[currentSubject].topics[currentTopic].pastPapers;
+  data.forEach(p=>{
+    let div=document.createElement("div");
+    div.innerHTML="<b>Q:</b> "+p.q+"<br><b>Solution:</b> "+p.solution+"<hr>";
+    container.appendChild(div);
+  });
+}
+
+function goHome(){document.getElementById("subjectView").classList.add("hidden"); document.getElementById("home").classList.remove("hidden");}
+
+function show(id){["home","chat","profile"].forEach(x=>document.getElementById(x).classList.add("hidden")); document.getElementById(id).classList.remove("hidden");}
+
+// ====================== AI HELPER DEMO ======================
+function askAI(){let question=document.getElementById("q").value; document.getElementById("ans").innerText="AI Answer (demo): "+question;}
+</script>
+</body>
+  </html>
